@@ -7,6 +7,8 @@ services:
     expose:
       - "8080"
     build: ../
+    depends_on:
+      - db
     deploy:
       resources:
         limits:
@@ -19,6 +21,8 @@ services:
     expose:
       - "8080"
     build: ../
+    depends_on:
+      - db
     deploy:
       resources:
         limits:
@@ -29,7 +33,7 @@ services:
     image: nginx
     hostname: nginx
     ports:
-      - "8080:80"
+      - "9999:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
@@ -40,3 +44,18 @@ services:
         limits:
           cpus: '0.25'
           memory: 500M
+
+  db:
+    image: postgres
+    hostname: db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: person
+      POSTGRES_PASSWORD: person
+      POSTGRES_DB: person
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: '1.5GB'
