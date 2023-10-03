@@ -25,3 +25,21 @@ fun Route.findPersonById(personService: PersonService) {
         call.respond(HttpStatusCode.OK, person)
     }
 }
+
+fun Route.countPerson(personService: PersonService) {
+    get("/contagem-pessoas") {
+        val count = personService.count()
+
+        call.respond(HttpStatusCode.OK, count)
+    }
+}
+
+fun Route.findPersonByTerm(personService: PersonService) {
+    get("/pessoas") {
+        val term = call.request.queryParameters["t"] ?: throw IllegalArgumentException("t é obrigatório")
+
+        val person = personService.findByTerm(term)
+
+        call.respond(HttpStatusCode.OK, person)
+    }
+}

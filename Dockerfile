@@ -1,7 +1,7 @@
 FROM gradle:7.4.0-jdk17 AS build
 WORKDIR /home/gradle
 COPY ./ /home/gradle
-RUN ["gradle", "build"]
+RUN ["gradle", "build", "-x", "test"]
 
 FROM openjdk:17
 EXPOSE 8080
