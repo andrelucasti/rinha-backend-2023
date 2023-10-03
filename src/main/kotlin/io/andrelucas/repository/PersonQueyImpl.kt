@@ -5,6 +5,7 @@ import io.andrelucas.business.PersonQuery
 import io.andrelucas.repository.DataBaseFactory.dbQuery
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
@@ -35,5 +36,13 @@ class PersonQueyImpl(private val database: Database): PersonQuery {
             }
         }
 
+    }
+
+    override suspend fun personAlreadyInserted(apelido: String): Boolean {
+        return dbQuery {
+            transaction(database) {
+                PersonTable.select { PersonTable.apelido eq apelido }.count() > 0
+            }
+        }
     }
 }

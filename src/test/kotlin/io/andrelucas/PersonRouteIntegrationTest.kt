@@ -76,7 +76,7 @@ class PersonRouteIntegrationTest {
             setBody("""
                     {
                         "apelido" : "Andre",
-                        "nome" : "Andre Silva",
+                        "nome" : "José Roberto",
                         "nascimento" : "2000-10-01",
                         "stack" : null
                     }

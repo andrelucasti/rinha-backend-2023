@@ -3,7 +3,6 @@ package io.andrelucas.app
 import io.andrelucas.business.EntityNotFoundException
 import io.andrelucas.business.PersonQuery
 import io.andrelucas.business.PersonRepository
-import java.sql.SQLException
 import java.util.*
 
 class PersonService(private val personRepository: PersonRepository,
@@ -11,12 +10,11 @@ class PersonService(private val personRepository: PersonRepository,
     suspend fun create(personRequest: PersonRequest): UUID {
         val person = personRequest.toPerson()
 
-        try {
-            personRepository.save(person)
-            return person.id
-        } catch (e: SQLException){
-            throw IllegalArgumentException(e.message)
-        }
+        val thereIsAPerson = personQuery.personAlreadyInserted(person.apelido)
+        if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
+
+        personRepository.save(person)
+        return person.id
     }
 
     suspend fun findById(personId: String): PersonResponse {

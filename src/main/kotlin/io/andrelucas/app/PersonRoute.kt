@@ -27,7 +27,7 @@ fun Route.findPersonById(personService: PersonService) {
 }
 
 fun Route.countPerson(personService: PersonService) {
-    get("/contagem-pessoas") {
+        get("/contagem-pessoas") {
         val count = personService.count()
 
         call.respond(HttpStatusCode.OK, count)

@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object DataBaseFactory {
     private const val DRIVE_CLASS_NAME = "org.postgresql.Driver"
-    private const val DATABASE_URL = "jdbc:db://localhost:5432/person"
+    private const val DATABASE_URL = "jdbc:postgresql://db:5432/person"
     val database: Database = Database.connect(DATABASE_URL, DRIVE_CLASS_NAME, "person", "person")
     fun init() {
        // For now ... But, after these tests I'm gonna move this configuration to an application.properties file

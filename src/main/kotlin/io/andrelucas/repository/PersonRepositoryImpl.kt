@@ -5,6 +5,7 @@ import io.andrelucas.business.PersonRepository
 import io.andrelucas.repository.DataBaseFactory.dbQuery
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
@@ -15,6 +16,11 @@ class PersonRepositoryImpl(private val database: Database) : PersonRepository {
 
     override suspend fun save(person: Person): Unit = dbQuery {
        transaction(database){
+
+           PersonTable.select(PersonTable.apelido eq person.apelido).singleOrNull()?.let {
+               throw IllegalArgumentException("Apelido já cadastrado")
+           }
+
            PersonTable.insert {
                it[id] = person.id
                it[apelido] = person.apelido
