@@ -2,6 +2,7 @@ package io.andrelucas.app
 
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -36,7 +37,7 @@ fun Route.countPerson(personService: PersonService) {
 
 fun Route.findPersonByTerm(personService: PersonService) {
     get("/pessoas") {
-        val term = call.request.queryParameters["t"] ?: throw IllegalArgumentException("t é obrigatório")
+        val term = call.request.queryParameters["t"] ?: throw BadRequestException("t é obrigatório")
 
         val person = personService.findByTerm(term)
 

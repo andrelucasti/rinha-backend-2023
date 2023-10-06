@@ -1,8 +1,14 @@
 package io.andrelucas.app
 
 import io.andrelucas.business.EntityNotFoundException
+import io.andrelucas.business.Person
 import io.andrelucas.business.PersonQuery
 import io.andrelucas.business.PersonRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.util.*
 
 class PersonService(private val personRepository: PersonRepository,

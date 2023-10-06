@@ -4,6 +4,7 @@ val logback_version: String by project
 
 val exposed_version: String by project
 val postgresql_version: String by project
+val hikaricp_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.10"
@@ -40,6 +41,10 @@ dependencies {
     implementation("org.postgresql:postgresql:$postgresql_version")
     implementation("io.ktor:ktor-server-netty-jvm")
     implementation("ch.qos.logback:logback-classic:$logback_version")
+    implementation("com.zaxxer:HikariCP:$hikaricp_version")
+
+    implementation("org.flywaydb:flyway-core:9.22.2")
+
     implementation("io.ktor:ktor-server-auto-head-response-jvm:2.3.4")
     implementation("io.ktor:ktor-server-host-common-jvm:2.3.4")
     implementation("io.ktor:ktor-server-status-pages-jvm:2.3.4")
