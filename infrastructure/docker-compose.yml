@@ -49,11 +49,11 @@ services:
   db:
     image: postgres
     hostname: db
-    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    #command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
       - "5432:5432"
-    volumes:
-      - ./my-postgres.conf:/etc/postgresql/postgresql.conf
+    #volumes:
+     # - ./my-postgres.conf:/etc/postgresql/postgresql.conf
     environment:
       POSTGRES_USER: person
       POSTGRES_PASSWORD: person
