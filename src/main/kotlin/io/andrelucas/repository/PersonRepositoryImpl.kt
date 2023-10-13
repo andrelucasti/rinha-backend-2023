@@ -2,59 +2,79 @@ package io.andrelucas.repository
 
 import io.andrelucas.business.Person
 import io.andrelucas.business.PersonRepository
+import io.andrelucas.repository.DataBaseFactory.database
 import io.andrelucas.repository.DataBaseFactory.dbQuery
+import io.andrelucas.repository.DataBaseFactory.jdbcConnection
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.sql.PreparedStatement
 import java.util.*
 
-class PersonRepositoryImpl(private val database: Database) : PersonRepository {
+object PersonRepositoryImpl: PersonRepository {
+    override suspend fun save(person: Person): Unit =
+       jdbcConnection {
+           it.autoCommit = false
+           it.beginRequest()
+           it.prepareStatement(
+               "INSERT INTO person (id, apelido, nome, nascimento, stack, search) VALUES (?, ?, ?, ?, ?, ?)"
+           ).apply {
 
-    override suspend fun save(person: Person): Unit = dbQuery {
-       transaction(database){
-           PersonTable.insert {
-               it[id] = person.id
-               it[apelido] = person.apelido
-               it[nome] = person.nome
-               it[nascimento] = person.nascimento
-               it[stack] = Json.encodeToString(PersonStack.serializer(), PersonStack(person.stack))
+                setObject(1, person.id)
+                setString(2, person.apelido)
+                setString(3, person.nome)
+                setDate(4, java.sql.Date.valueOf(person.nascimento))
+                setArray(5, it.createArrayOf("TEXT", person.stack?.toTypedArray()))
+                setString(6, person.nome + " " + person.apelido + " " + person.stack?.joinToString(" "))
+                addBatch()
+                executeBatch()
            }
+
+           it.commit()
        }
-    }
+
+
+    override suspend fun saveBatch(personList: List<Person>): Unit =
+        jdbcConnection {
+            it.prepareStatement(
+                "INSERT INTO person (id, apelido, nome, nascimento, stack, search) VALUES (?, ?, ?, ?, ?, ?)"
+            ).apply {
+                personList.forEach { person ->
+                    setObject(1, person.id)
+                    setString(2, person.apelido)
+                    setString(3, person.nome)
+                    setDate(4, java.sql.Date.valueOf(person.nascimento))
+                    setArray(5, it.createArrayOf("TEXT", person.stack?.toTypedArray()))
+                    setString(6, person.nome + " " + person.apelido + " " + person.stack?.joinToString(" "))
+                    addBatch()
+                }
+                executeBatch()
+            }
+        }
+
 
     override suspend fun findById(id: UUID): Person? {
-        return dbQuery {
-            transaction(database) {
-                PersonTable.select { PersonTable.id eq id }.mapNotNull {
-                    Person(
-                        id = it[PersonTable.id],
-                        apelido = it[PersonTable.apelido],
-                        nome = it[PersonTable.nome],
-                        nascimento = it[PersonTable.nascimento],
-                        stack = Json.decodeFromString(PersonStack.serializer(), it[PersonTable.stack]).stack
-                    )
-                }.singleOrNull()
-            }
-        }
-    }
+        return jdbcConnection {
+            val ps = it.prepareStatement("SELECT id, apelido, nome, nascimento, stack from person where id = ?")
+            ps.setObject(1, id)
+            val rs = ps.executeQuery()
 
-    override suspend fun findAll(): List<Person> = dbQuery {
-        transaction(database) {
-            PersonTable.selectAll().map {
-                Person(
-                    id = it[PersonTable.id],
-                    apelido = it[PersonTable.apelido],
-                    nome = it[PersonTable.nome],
-                    nascimento = it[PersonTable.nascimento],
-                    stack = Json.decodeFromString(PersonStack.serializer(), it[PersonTable.stack]).stack
+            if (rs.next()) {
+                return@jdbcConnection Person(
+                    id = rs.getObject("id", UUID::class.java),
+                    apelido = rs.getString("apelido"),
+                    nome = rs.getString("nome"),
+                    nascimento = rs.getDate("nascimento").toLocalDate(),
+                    stack = rs.getArray("stack")?.let { stack ->
+                        (stack.array as Array<String>).toList()
+                    }
                 )
             }
+            return@jdbcConnection null
         }
     }
-
     override suspend fun delete(id: UUID) {
         TODO("Not yet implemented")
     }

@@ -2,8 +2,9 @@ package io.andrelucas
 
 import io.andrelucas.app.PersonRequest
 import io.andrelucas.app.PersonResponse
-import io.andrelucas.repository.DataBaseFactory
+import io.andrelucas.plugins.configureRouting
 import io.andrelucas.repository.PersonTable
+import io.andrelucas.repository.dataBase
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -20,16 +21,19 @@ class PersonRouteIntegrationTest {
 
     private val path = "/pessoas"
     @BeforeTest
-    fun setUp() {
-        transaction(DataBaseFactory.database) {
-            PersonTable.deleteAll()
+    fun setUp() = testApplication {
+        application {
+            module()
+            transaction(dataBase()) {
+                PersonTable.deleteAll()
+            }
         }
     }
 
     @Test
     fun shouldReturnStatusCreatedAndTheLocationWhenAPersonIsCreated() = testApplication {
         application {
-            module()
+            configureRouting()
         }
         client.post(path) {
             contentType(ContentType.Application.Json)
@@ -52,7 +56,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnStatusCreatedWhenAValidPersonIsCreated() = testApplication {
         application {
-            module()
+            configureRouting()
         }
         client.post(path) {
             contentType(ContentType.Application.Json)
@@ -92,7 +96,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnStatusUnprocessableEntityWhenNameIsNull() = testApplication{
         application {
-            module()
+            configureRouting()
         }
 
         client.post(path) {
@@ -115,7 +119,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnStatusUnprocessableEntityWhenApelidoIsNull() = testApplication{
         application {
-            module()
+            configureRouting()
         }
 
         client.post(path) {
@@ -138,7 +142,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnStatusUnprocessableEntityWhenThePersonAlreadyWasCreated() = testApplication{
         application {
-            module()
+            configureRouting()
         }
 
         client.post(path) {
@@ -176,7 +180,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnStatusBadRequestWhenAPersonIsCreatedWithInvalidValueAtTheStackField() = testApplication {
         application {
-            module()
+            configureRouting()
         }
         client.post(path) {
             contentType(ContentType.Application.Json)
@@ -197,7 +201,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnStatusBadRequestWhenAPersonIsCreatedWithInvalidValueAtTheNomeField() = testApplication {
         application {
-            module()
+            configureRouting()
         }
         client.post(path) {
             contentType(ContentType.Application.Json)
@@ -218,7 +222,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnStatusBadRequestWhenAPersonIsCreatedWithInvalidValueAtTheApelidoField() = testApplication {
         application {
-            module()
+            configureRouting()
         }
         client.post(path) {
             contentType(ContentType.Application.Json)
@@ -239,7 +243,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldFindPersonById() = testApplication {
         application {
-            module()
+            configureRouting()
         }
 
         client.post(path) {
@@ -284,7 +288,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnPersonsByStack() = testApplication {
         application {
-            module()
+            configureRouting()
         }
 
         client.post(path){
@@ -322,7 +326,7 @@ class PersonRouteIntegrationTest {
     @Test
     fun shouldReturnPersonsByNames() = testApplication {
         application {
-            module()
+            configureRouting()
         }
 
         client.post(path){

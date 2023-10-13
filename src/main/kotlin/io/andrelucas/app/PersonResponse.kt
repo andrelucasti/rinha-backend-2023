@@ -14,7 +14,7 @@ fun Person.toPersonResponse(): PersonResponse {
             apelido = it.apelido,
             nome = it.nome,
             nascimento = it.nascimento.format(DateTimeFormatter.ISO_LOCAL_DATE),
-            stack = it.stack
+            stack = it.stack?: emptyList()
         )
     }
 }

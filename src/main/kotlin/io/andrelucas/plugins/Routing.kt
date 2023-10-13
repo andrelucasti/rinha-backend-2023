@@ -6,12 +6,15 @@ import io.andrelucas.business.NumericException
 import io.andrelucas.repository.*
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.application.*
 import io.ktor.server.plugins.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.jetbrains.exposed.sql.Database
 
 fun Application.configureRouting() {
+    log.info("Configuring routing")
     install(StatusPages) {
         exception<IllegalArgumentException> { call, cause ->
             call.respondText(text = "${cause.message}", status = HttpStatusCode.UnprocessableEntity)
@@ -30,10 +33,7 @@ fun Application.configureRouting() {
         }
     }
 
-    val personService = PersonService(
-        PersonRepositoryImpl(dataBase()),
-        PersonQueyImpl(dataBase())
-    )
+    val personService = PersonService.getInstance(PersonRepositoryImpl, PersonQueryImpl, CacheServiceImpl)
 
     routing {
         createPerson(personService)

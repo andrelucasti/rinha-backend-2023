@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_person_apelido ON PERSON (apelido);

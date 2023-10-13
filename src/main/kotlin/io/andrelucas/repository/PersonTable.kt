@@ -8,12 +8,12 @@ import org.jetbrains.exposed.sql.javatime.date
 data class PersonStack(val stack: List<String>)
 
 object PersonTable: Table() {
-   val id = uuid("id")
-    val apelido = varchar("apelido", 32)
+    val id = uuid("id")
+    val apelido = varchar("apelido", 32).index("idx_apelido", false)
     val nome = varchar("nome", 100)
     val nascimento = date("nascimento")
-    val stack = varchar("stack", 1000)
+    val stack = arrayListOf("stack")
+    val search = varchar("search", 1000)
 
     override val primaryKey = PrimaryKey(id)
-
 }
