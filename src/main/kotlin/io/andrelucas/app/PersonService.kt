@@ -50,15 +50,18 @@ class PersonService private constructor(
     }
 
     suspend fun findById(personId: String): PersonResponse {
-        LOGGER.info("finding person in database - no launch")
-        return personRepository.findById(UUID.fromString(personId))?.toPersonResponse()
-               ?: throw EntityNotFoundException("Person not found")
+      return withContext(BufferPerson.threadPool) {
+          LOGGER.info("finding person in database - no launch")
+          personRepository.findById(UUID.fromString(personId))?.toPersonResponse()
+              ?: throw EntityNotFoundException("Person not found")
+      }
     }
 
     suspend fun findByTerm(term: String): List<PersonResponse> {
-        LOGGER.info("finding person by term in database - no launch")
-        val personByTerm = personQuery.personByTerm(term)
-        return personByTerm.map { it.toPersonResponse() }
+       return withContext(BufferPerson.threadPool) {
+           LOGGER.info("finding person by term in database - no launch")
+           personQuery.personByTerm(term).map { it.toPersonResponse() }
+       }
     }
 
     suspend fun count(): Long {
