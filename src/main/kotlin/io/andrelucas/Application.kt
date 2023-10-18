@@ -11,14 +11,14 @@ fun main(args: Array<String>){
     io.ktor.server.netty.EngineMain.main(args)
     System.setProperty("kotlinx.coroutines.debug", "on")
     System.setProperty("kotlinx.coroutines.stacktrace.recovery", "true")
-    // It is recommended to set this to false to avoid performance hits with the DebugProbes option!
-    DebugProbes.enableCreationStackTraces = false
-    DebugProbes.install()
 
 }
 
 fun Application.migrations() {
     runBlocking {
+        DebugProbes.enableCreationStackTraces = false
+        DebugProbes.install()
+
         createTable()
     }
 }
