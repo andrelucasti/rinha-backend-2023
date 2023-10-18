@@ -16,7 +16,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 1.0GB
+          memory: 750MB
     restart: always
     network_mode: host
 
@@ -38,7 +38,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 1.0GB
+          memory: 750MB
     restart: always
     network_mode: host
 
@@ -51,7 +51,7 @@ services:
       resources:
         limits:
           cpus: '0.10'
-          memory: 300M
+          memory: 200M
     network_mode: host
     depends_on:
       - api1
@@ -70,5 +70,5 @@ services:
       resources:
         limits:
           cpus: '0.4'
-          memory: '700M'
+          memory: '1.3GB'
     network_mode: host
