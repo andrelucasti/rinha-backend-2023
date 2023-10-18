@@ -15,8 +15,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 750MB
+          cpus: '0.2'
+          memory: 1GB
     restart: always
     network_mode: host
 
@@ -37,8 +37,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 750MB
+          cpus: '0.2'
+          memory: 1GB
     restart: always
     network_mode: host
 
@@ -51,7 +51,7 @@ services:
       resources:
         limits:
           cpus: '0.10'
-          memory: 200M
+          memory: 300M
     network_mode: host
     depends_on:
       - api1
@@ -69,6 +69,6 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: '1.3GB'
+          cpus: '1'
+          memory: '700MB'
     network_mode: host
