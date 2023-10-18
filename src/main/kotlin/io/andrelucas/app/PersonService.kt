@@ -9,6 +9,7 @@ import io.andrelucas.repository.CacheService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -36,18 +37,14 @@ class PersonService private constructor(
             if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
 
             val personChannel = Channel<Person>()
-            launch(BufferPerson.threadPool) {
-                LOGGER.info("Sending person to worker thread - launch")
-                personChannel.send(person)
-                personChannel.close()
 
-                throw IllegalArgumentException("test excep ${person.apelido}")
-            }
+            LOGGER.info("Sending person to worker thread - launch")
+            senderPerson(personChannel, person)
 
-            launch(BufferPerson.threadPool) {
-                LOGGER.info("Receiving person from worker thread - launch")
-                workerReceiver(personChannel, personRepository)
-            }
+
+            LOGGER.info("Receiving person from worker thread - launch")
+            workerReceiver(personChannel, personRepository)
+
             person.id
         }
     }
@@ -69,9 +66,14 @@ class PersonService private constructor(
     }
 }
 
+fun CoroutineScope.senderPerson(personChannel: SendChannel<Person>, person: Person) = launch(BufferPerson.threadPool) {
+    LOGGER.info("Sending person to worker thread - launch")
+    personChannel.send(person)
+}
+
 fun CoroutineScope.workerReceiver(receiveChannel: ReceiveChannel<Person>, personRepository: PersonRepository) = launch(BufferPerson.threadPool) {
     for (person in receiveChannel) {
-        LOGGER.info("Thread: ${Thread.currentThread().name}-  saving person in database - launch")
+        LOGGER.info("saving person in database - launch")
         personRepository.save(person)
     }
 }
