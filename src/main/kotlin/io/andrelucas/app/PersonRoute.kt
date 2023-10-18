@@ -6,6 +6,9 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.debug.DebugProbes
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 
 fun Route.createPerson(personService: PersonService) {
 
@@ -42,5 +45,15 @@ fun Route.findPersonByTerm(personService: PersonService) {
         val term = call.request.queryParameters["t"] ?: throw BadRequestException("t � obrigat�rio")
         val persons = personService.findByTerm(term)
         call.respond(HttpStatusCode.OK, persons)
+    }
+}
+
+
+fun Route.coroutine(){
+    get("/coroutines") {
+        val os = ByteArrayOutputStream()
+        val ps = PrintStream(os)
+        DebugProbes.dumpCoroutines(ps)
+        call.respondText(os.toString(Charsets.UTF_8))
     }
 }

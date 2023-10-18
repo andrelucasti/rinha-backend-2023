@@ -40,5 +40,6 @@ fun Application.configureRouting() {
         findPersonById(personService)
         findPersonByTerm(personService)
         countPerson(personService)
+        coroutine()
     }
 }

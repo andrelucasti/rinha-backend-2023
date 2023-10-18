@@ -13,7 +13,9 @@ class PersonService private constructor(
 
     companion object {
         private var instance : PersonService? = null
-        fun getInstance(personRepository: PersonRepository, personQuery: PersonQuery, cacheService: CacheService) : PersonService {
+        fun getInstance(personRepository: PersonRepository,
+                        personQuery: PersonQuery,
+                        cacheService: CacheService) : PersonService {
             if (instance == null) {
                 instance = PersonService(personRepository, personQuery, cacheService)
             }
@@ -21,35 +23,29 @@ class PersonService private constructor(
         }
     }
     suspend fun create(personRequest: PersonRequest): UUID {
+        LOGGER.info("Thread: ${Thread.currentThread().name}- creating person")
 
-            LOGGER.info("Thread: ${Thread.currentThread().name}- creating person")
+        val person = personRequest.toPerson()
 
-            val person = personRequest.toPerson()
+        val thereIsAPerson = personQuery.exists(person.apelido)
+        if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
 
-            val thereIsAPerson = personQuery.exists(person.apelido)
-            if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
-
-            LOGGER.info("Thread: ${Thread.currentThread().name}-  saving person in database - launch")
-            personRepository.save(person)
+        LOGGER.info("Thread: ${Thread.currentThread().name}-  saving person in database - launch")
+        personRepository.save(person)
 
 
-            return person.id
+        return person.id
 
     }
 
     suspend fun findById(personId: String): PersonResponse {
-
-               return personRepository.findById(UUID.fromString(personId))?.toPersonResponse()
-                   ?: throw EntityNotFoundException("Person not found")
-
-
+           return personRepository.findById(UUID.fromString(personId))?.toPersonResponse()
+               ?: throw EntityNotFoundException("Person not found")
     }
 
     suspend fun findByTerm(term: String): List<PersonResponse> {
-
-            val personByTerm = personQuery.personByTerm(term)
-            return personByTerm.map { it.toPersonResponse() }
-
+        val personByTerm = personQuery.personByTerm(term)
+        return personByTerm.map { it.toPersonResponse() }
     }
 
     suspend fun count(): Long {
