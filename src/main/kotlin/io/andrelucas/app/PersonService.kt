@@ -3,12 +3,7 @@ package io.andrelucas.app
 import io.andrelucas.business.EntityNotFoundException
 import io.andrelucas.business.PersonQuery
 import io.andrelucas.business.PersonRepository
-import io.andrelucas.repository.BufferPerson.threadPool
 import io.andrelucas.repository.CacheService
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.*
 
 class PersonService private constructor(
