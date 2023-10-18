@@ -69,6 +69,7 @@ class PersonService private constructor(
 fun CoroutineScope.senderPerson(personChannel: SendChannel<Person>, person: Person) = launch(BufferPerson.threadPool) {
     LOGGER.info("Sending person to worker thread - launch")
     personChannel.send(person)
+    personChannel.close()
 }
 
 fun CoroutineScope.workerReceiver(receiveChannel: ReceiveChannel<Person>, personRepository: PersonRepository) = launch(BufferPerson.threadPool) {
