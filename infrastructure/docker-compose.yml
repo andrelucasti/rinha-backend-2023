@@ -15,7 +15,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '2'
           memory: 1GB
     restart: always
     network_mode: host
@@ -37,7 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '2'
           memory: 1GB
     restart: always
     network_mode: host
