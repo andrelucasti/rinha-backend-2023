@@ -39,6 +39,7 @@ class PersonService private constructor(
             launch(BufferPerson.threadPool) {
                 LOGGER.info("Sending person to worker thread - launch")
                 personChannel.send(person)
+                personChannel.close()
 
                 throw IllegalArgumentException("test excep ${person.apelido}")
             }
@@ -47,7 +48,6 @@ class PersonService private constructor(
                 LOGGER.info("Receiving person from worker thread - launch")
                 workerReceiver(personChannel, personRepository)
             }
-            personChannel.close()
             person.id
         }
     }
