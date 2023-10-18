@@ -8,6 +8,8 @@ import java.util.*
 object CacheServiceImpl: CacheService {
     override suspend fun put(person: Person) {
         DataBaseFactory.jdbcConnection {
+            it.autoCommit = false
+            it.beginRequest()
             it.prepareStatement("INSERT INTO cache (id, key, value ) VALUES (?, ?, ?::jsonb)")
                 .apply {
                     setString(1, person.id.toString())
@@ -15,8 +17,8 @@ object CacheServiceImpl: CacheService {
                     setString(3, Json.encodeToJsonElement(person.toPersonCache()).toString())
 
                     execute()
-                    close()
                 }
+            it.commit()
         }
     }
 

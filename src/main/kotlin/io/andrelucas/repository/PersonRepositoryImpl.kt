@@ -2,15 +2,7 @@ package io.andrelucas.repository
 
 import io.andrelucas.business.Person
 import io.andrelucas.business.PersonRepository
-import io.andrelucas.repository.DataBaseFactory.database
-import io.andrelucas.repository.DataBaseFactory.dbQuery
 import io.andrelucas.repository.DataBaseFactory.jdbcConnection
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
-import java.sql.PreparedStatement
 import java.util.*
 
 object PersonRepositoryImpl: PersonRepository {
@@ -28,8 +20,8 @@ object PersonRepositoryImpl: PersonRepository {
                 setDate(4, java.sql.Date.valueOf(person.nascimento))
                 setArray(5, it.createArrayOf("TEXT", person.stack?.toTypedArray()))
                 setString(6, person.nome + " " + person.apelido + " " + person.stack?.joinToString(" "))
-                addBatch()
-                executeBatch()
+
+                execute()
            }
 
            it.commit()

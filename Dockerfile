@@ -7,4 +7,4 @@ FROM openjdk:17
 EXPOSE 8080
 RUN ["mkdir", "/app"]
 COPY --from=build /home/gradle/build/libs/*-all.jar /app/app.jar
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java","-Xms750M", "-Xmx750M", "-jar", "/app/app.jar"]

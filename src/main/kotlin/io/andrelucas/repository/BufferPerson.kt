@@ -4,6 +4,6 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
 
 object BufferPerson {
-    val threadPool = Executors.newFixedThreadPool(50)
+    val threadPool = Executors.newCachedThreadPool()
         .asCoroutineDispatcher()
 }
