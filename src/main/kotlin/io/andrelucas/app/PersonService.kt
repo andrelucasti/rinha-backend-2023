@@ -38,11 +38,11 @@ class PersonService private constructor(
 
             val personChannel = Channel<Person>()
 
-            LOGGER.info("Sending person to worker thread - launch")
+            LOGGER.info("Sending person to worker thread - launch - ${person.id}")
             senderPerson(personChannel, person)
 
 
-            LOGGER.info("Receiving person from worker thread - launch")
+            LOGGER.info("Receiving person from worker thread - launch ${person.id}")
             workerReceiver(personChannel, personRepository)
 
             person.id
@@ -51,7 +51,7 @@ class PersonService private constructor(
 
     suspend fun findById(personId: String): PersonResponse {
       return withContext(BufferPerson.threadPool) {
-          LOGGER.info("finding person in database - no launch")
+          LOGGER.info("finding person in database - no launch  $personId")
           personRepository.findById(UUID.fromString(personId))?.toPersonResponse()
               ?: throw EntityNotFoundException("Person not found")
       }
@@ -70,14 +70,14 @@ class PersonService private constructor(
 }
 
 fun CoroutineScope.senderPerson(personChannel: SendChannel<Person>, person: Person) = launch(BufferPerson.threadPool) {
-    LOGGER.info("Sending person to worker thread - launch")
+    LOGGER.info("Sending person to worker thread - launch ${person.id}")
     personChannel.send(person)
     personChannel.close()
 }
 
 fun CoroutineScope.workerReceiver(receiveChannel: ReceiveChannel<Person>, personRepository: PersonRepository) = launch(BufferPerson.threadPool) {
     for (person in receiveChannel) {
-        LOGGER.info("saving person in database - launch")
+        LOGGER.info("saving person in database - launch ${person.id}")
         personRepository.save(person)
     }
 }
