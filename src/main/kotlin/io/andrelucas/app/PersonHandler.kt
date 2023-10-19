@@ -14,6 +14,7 @@ fun Application.handle(cacheChannel: Channel<Person>,
                        cacheService: CacheService){
 
     val nWorkers = environment.config.property("ktor.config.workerPoll").getString().toInt()
+    val batchSize = environment.config.property("ktor.config.batchSize").getString().toInt()
 
     repeat(nWorkers){
         launch(BufferPerson.threadPool) {
@@ -21,7 +22,7 @@ fun Application.handle(cacheChannel: Channel<Person>,
         }
 
         launch(BufferPerson.threadPool) {
-            workerSaveBackground(batchInsertChannel, personRepository, cacheService)
+            workerSaveBackground(batchInsertChannel, personRepository, cacheService, batchSize)
         }
    }
 }

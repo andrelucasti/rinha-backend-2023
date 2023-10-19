@@ -96,17 +96,23 @@ fun CoroutineScope.workerSaveInCache(receiveChannel: ReceiveChannel<Person>, sen
 }
 
 
-fun CoroutineScope.workerSaveBackground(receiveChannel: ReceiveChannel<Person>, personRepository: PersonRepository, cacheService: CacheService) = launch(BufferPerson.threadPool){
+fun CoroutineScope.workerSaveBackground(
+    receiveChannel: ReceiveChannel<Person>,
+    personRepository: PersonRepository,
+    cacheService: CacheService,
+    batchSize: Int
+) = launch(BufferPerson.threadPool){
     LOGGER.info("loading person from cache to save in database - launch")
     val personBatch = cacheService.getAll().toMutableList()
     while (true) {
         LOGGER.info("listening person to save in database - launch")
         LOGGER.info("personBatch size ${personBatch.size}")
 
+
         select<Unit> {
             receiveChannel.onReceive {
                 LOGGER.info("Receiving person ${it.apelido} to batch save in database - launch")
-                if (personBatch.size < 100) {
+                if (personBatch.size < batchSize) {
                     personBatch.add(it)
                 } else {
                     personRepository.saveBatch(personBatch)

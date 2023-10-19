@@ -10,6 +10,7 @@ services:
       - DATABASE_USERNAME=person
       - DATABASE_PASSWORD=person
       - WORKER_POOL=10
+      - BATCH_SIZE=1000
     build: ../
     depends_on:
       - db
@@ -30,6 +31,7 @@ services:
       - DATABASE_USERNAME=person
       - DATABASE_PASSWORD=person
       - WORKER_POOL=10
+      - BATCH_SIZE=1000
     expose:
       - "8082"
     build: ../
