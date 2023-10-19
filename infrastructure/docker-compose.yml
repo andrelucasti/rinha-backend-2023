@@ -15,7 +15,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: '0.4'
           memory: 1GB
     restart: always
     network_mode: host
@@ -37,7 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: '0.4'
           memory: 1GB
     restart: always
     network_mode: host
@@ -59,6 +59,8 @@ services:
   db:
     image: postgres
     hostname: db
+    ports:
+      - "5432:5432"
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     volumes:
       - ./my-postgres.conf:/etc/postgresql/postgresql.conf
@@ -69,6 +71,5 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: '1GB'
-    network_mode: host
+          cpus: '0.5'
+          memory: '500M'

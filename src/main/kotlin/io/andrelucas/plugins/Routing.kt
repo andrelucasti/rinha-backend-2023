@@ -3,6 +3,7 @@ package io.andrelucas.plugins
 import io.andrelucas.app.*
 import io.andrelucas.business.EntityNotFoundException
 import io.andrelucas.business.NumericException
+import io.andrelucas.business.Person
 import io.andrelucas.repository.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -12,10 +13,11 @@ import io.ktor.server.plugins.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.debug.DebugProbes
 import org.jetbrains.exposed.sql.Database
 
-fun Application.configureRouting() {
+fun Application.configureRouting(personService: PersonService) {
     log.info("Configuring routing")
     install(StatusPages) {
         exception<IllegalArgumentException> { call, cause ->
@@ -35,7 +37,6 @@ fun Application.configureRouting() {
         }
     }
 
-    val personService = PersonService.getInstance(PersonRepositoryImpl, PersonQueryImpl, CacheServiceImpl)
 
     routing {
         createPerson(personService)

@@ -10,4 +10,7 @@ interface CacheService {
     suspend fun exists(apelido: String): Boolean
     suspend fun count(): Long
     suspend fun findByTerm(term: String): List<Person>
+    suspend fun deleteBatch(persons: List<Person>)
+
+    suspend fun getAll(): List<Person>
 }

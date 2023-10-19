@@ -10,57 +10,63 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 import java.util.*
 
 class PersonService private constructor(
+                    private val personChannel: Channel<Person>,
                     private val personRepository: PersonRepository,
                     private val personQuery: PersonQuery,
                     private val cacheService: CacheService) {
 
     companion object {
         private var instance : PersonService? = null
-        fun getInstance(personRepository: PersonRepository,
-                        personQuery: PersonQuery,
-                        cacheService: CacheService) : PersonService {
+        fun getInstance(
+            personChannel: Channel<Person>,
+            personRepository: PersonRepository,
+            personQuery: PersonQuery,
+            cacheService: CacheService) : PersonService {
             if (instance == null) {
-                instance = PersonService(personRepository, personQuery, cacheService)
+                instance = PersonService(personChannel, personRepository, personQuery, cacheService)
             }
             return instance!!
         }
     }
-    suspend fun create(personRequest: PersonRequest): UUID {
-        return withContext(BufferPerson.threadPool) {
-            val person = personRequest.toPerson()
-            val thereIsAPerson = personQuery.exists(person.apelido)
-            if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
+    suspend fun create(personRequest: PersonRequest): UUID = coroutineScope{val person = personRequest.toPerson()
+        val thereIsAPerson = cacheService.exists(person.apelido).or(personQuery.exists(person.apelido))
+        if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
 
-            val personChannel = Channel<Person>()
+        LOGGER.info("Sending person to worker thread - launch - ${person.id}")
+        senderPerson(personChannel, person)
 
-            LOGGER.info("Sending person to worker thread - launch - ${person.id}")
-            senderPerson(personChannel, person)
+        person.id
 
-
-            LOGGER.info("Receiving person from worker thread - launch ${person.id}")
-            workerReceiver(personChannel, personRepository)
-
-            person.id
-        }
     }
 
     suspend fun findById(personId: String): PersonResponse {
       return withContext(BufferPerson.threadPool) {
-          LOGGER.info("finding person in database - no launch  $personId")
-          personRepository.findById(UUID.fromString(personId))?.toPersonResponse()
-              ?: throw EntityNotFoundException("Person not found")
+          LOGGER.info("finding person by ID $personId - no launch")
+          val person = cacheService.get(UUID.fromString(personId))
+          person?.toPersonResponse()
+              ?: (personRepository.findById(UUID.fromString(personId))?.toPersonResponse()
+                  ?: throw EntityNotFoundException("Person not found with id $personId"))
       }
     }
 
     suspend fun findByTerm(term: String): List<PersonResponse> {
        return withContext(BufferPerson.threadPool) {
            LOGGER.info("finding person by term in database - no launch")
-           personQuery.personByTerm(term).map { it.toPersonResponse() }
+
+           val persons = cacheService.findByTerm(term).map { it.toPersonResponse() }
+
+           if (persons.isEmpty()){
+                return@withContext personQuery.personByTerm(term).map { it.toPersonResponse() }
+           }
+
+           return@withContext persons
        }
     }
 
@@ -72,13 +78,43 @@ class PersonService private constructor(
 fun CoroutineScope.senderPerson(personChannel: SendChannel<Person>, person: Person) = launch(BufferPerson.threadPool) {
     LOGGER.info("Sending person to worker thread - launch ${person.id}")
     personChannel.send(person)
-    personChannel.close()
 }
 
-fun CoroutineScope.workerReceiver(receiveChannel: ReceiveChannel<Person>, personRepository: PersonRepository) = launch(BufferPerson.threadPool) {
-    for (person in receiveChannel) {
-        LOGGER.info("saving person in database - launch ${person.id}")
-        personRepository.save(person)
+
+
+fun CoroutineScope.workerSaveInCache(receiveChannel: ReceiveChannel<Person>, sendChannel: SendChannel<Person>, personRepository: PersonRepository, cacheService: CacheService) = launch(BufferPerson.threadPool) {
+    while(true){
+        LOGGER.info("listening person from worker thread - launch")
+        select<Unit> {
+            receiveChannel.onReceive {
+                LOGGER.info("Receiving person ${it.apelido} from worker to save in cache thread - launch")
+                cacheService.put(it)
+                sendChannel.send(it)
+            }
+        }
+    }
+}
+
+
+fun CoroutineScope.workerSaveBackground(receiveChannel: ReceiveChannel<Person>, personRepository: PersonRepository, cacheService: CacheService) = launch(BufferPerson.threadPool){
+    LOGGER.info("loading person from cache to save in database - launch")
+    val personBatch = cacheService.getAll().toMutableList()
+    while (true) {
+        LOGGER.info("listening person to save in database - launch")
+        LOGGER.info("personBatch size ${personBatch.size}")
+
+        select<Unit> {
+            receiveChannel.onReceive {
+                LOGGER.info("Receiving person ${it.apelido} to batch save in database - launch")
+                if (personBatch.size < 100) {
+                    personBatch.add(it)
+                } else {
+                    personRepository.saveBatch(personBatch)
+                    cacheService.deleteBatch(personBatch)
+                    personBatch.clear()
+                }
+            }
+        }
     }
 }
 

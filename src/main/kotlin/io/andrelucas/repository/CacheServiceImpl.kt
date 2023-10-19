@@ -67,5 +67,32 @@ object CacheServiceImpl: CacheService {
             persons
         }
     }
+
+    override suspend fun deleteBatch(persons: List<Person>) {
+        DataBaseFactory.jdbcConnection {
+            it.autoCommit = false
+            it.beginRequest()
+            val ps = it.prepareStatement("DELETE FROM cache where id = ?")
+            persons.forEach { person ->
+                ps.setString(1, person.id.toString())
+                ps.addBatch()
+            }
+            ps.executeBatch()
+            it.commit()
+        }
+    }
+
+    override suspend fun getAll(): List<Person> {
+        return DataBaseFactory.jdbcConnection {
+            val ps = it.prepareStatement("SELECT id, key, value from cache")
+            val rs = ps.executeQuery()
+
+            val persons = mutableListOf<Person>()
+            while (rs.next()) {
+                persons.add(Json.decodeFromString(PersonCache.serializer(), rs.getString("value")).toPerson())
+            }
+            persons
+        }
+    }
 }
 

@@ -17,20 +17,10 @@ object DataBaseFactory {
 
     private val dataSource = createHikariDataSource()
 
-    private val databaseThreadPool = Executors.newCachedThreadPool()
-        .asCoroutineDispatcher()
-
-    private val maxThreadSimult = Semaphore(dataSource.maximumPoolSize * 4)
-
-    suspend fun <T> jdbcConnection(block: (Connection) -> (T)) = maxThreadSimult.withPermit {
-        withContext(databaseThreadPool) {
-            dataSource.connection.use { connection ->
-                LOGGER.info("Thread: ${Thread.currentThread().name}- Opening Connection")
-
-                return@use block(connection)
-            }
+    fun <T> jdbcConnection(block: (Connection) -> (T)): (T) {
+        dataSource.connection.use { connection ->
+            return block(connection)
         }
-
     }
 
     private fun createHikariDataSource() = HikariDataSource(
@@ -52,13 +42,23 @@ object DataBaseFactory {
 
 }
 
-suspend fun createTable() {
+fun createTable() {
     DataBaseFactory.jdbcConnection { connection ->
         connection.createStatement().use { statement ->
             statement.execute("CREATE TABLE IF NOT EXISTS person (id UUID PRIMARY KEY, apelido VARCHAR(32) NOT NULL, nome VARCHAR(100) NOT NULL, nascimento DATE NOT NULL, stack TEXT[] NULL, search TEXT NOT NULL)")
             statement.execute("CREATE INDEX IF NOT EXISTS idx_apelido ON person (apelido)")
             statement.execute("CREATE EXTENSION IF NOT EXISTS  pg_trgm")
             statement.execute("CREATE INDEX IF NOT EXISTS idx_search_gist ON person USING GIST (search GIST_TRGM_OPS)")
+        }
+    }
+}
+
+fun createCacheTable(){
+    DataBaseFactory.jdbcConnection {
+        it.createStatement().use {statement ->
+            statement.execute("CREATE EXTENSION IF NOT EXISTS  pg_stat_statements")
+            statement.execute("CREATE UNLOGGED TABLE IF NOT EXISTS cache (id VARCHAR(100) PRIMARY KEY, key VARCHAR(100), value jsonb NOT NULL)")
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_key ON cache (key)")
         }
     }
 }
