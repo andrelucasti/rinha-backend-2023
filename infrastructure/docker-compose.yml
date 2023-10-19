@@ -63,8 +63,6 @@ services:
   db:
     image: postgres
     hostname: db
-    ports:
-      - "5432:5432"
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     volumes:
       - ./my-postgres.conf:/etc/postgresql/postgresql.conf
@@ -77,3 +75,4 @@ services:
         limits:
           cpus: '0.5'
           memory: '500M'
+    network_mode: host
