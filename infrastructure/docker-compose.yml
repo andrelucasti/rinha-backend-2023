@@ -9,6 +9,7 @@ services:
       - DATABASE_URL=jdbc:postgresql://localhost:5432/person
       - DATABASE_USERNAME=person
       - DATABASE_PASSWORD=person
+      - WORKER_POOL=10
     build: ../
     depends_on:
       - db
@@ -28,6 +29,7 @@ services:
       - DATABASE_URL=jdbc:postgresql://localhost:5432/person
       - DATABASE_USERNAME=person
       - DATABASE_PASSWORD=person
+      - WORKER_POOL=10
     expose:
       - "8082"
     build: ../

@@ -38,8 +38,6 @@ object DataBaseFactory {
             this.poolName = "PersonPool"
         }
     )
-
-
 }
 
 fun createTable() {

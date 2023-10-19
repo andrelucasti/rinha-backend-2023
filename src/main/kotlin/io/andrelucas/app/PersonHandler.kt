@@ -15,13 +15,13 @@ fun Application.handle(cacheChannel: Channel<Person>,
 
     val nWorkers = environment.config.property("ktor.config.workerPoll").getString().toInt()
 
-   repeat(nWorkers){
-       launch(BufferPerson.threadPool) {
-           workerSaveInCache(cacheChannel, batchInsertChannel, personRepository, cacheService)
-       }
+    repeat(nWorkers){
+        launch(BufferPerson.threadPool) {
+            workerSaveInCache(cacheChannel, batchInsertChannel, personRepository, cacheService)
+        }
 
-       launch(BufferPerson.threadPool) {
-           workerSaveBackground(batchInsertChannel, personRepository, cacheService)
-       }
+        launch(BufferPerson.threadPool) {
+            workerSaveBackground(batchInsertChannel, personRepository, cacheService)
+        }
    }
 }
