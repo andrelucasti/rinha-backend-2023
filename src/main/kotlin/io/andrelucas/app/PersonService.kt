@@ -110,18 +110,8 @@ fun CoroutineScope.workerSaveBackground(
         select<Unit> {
             receiveChannel.onReceiveCatching {
                 val person = it.getOrNull()
-                if (person == null) {
-                    LOGGER.info("Receiving null person from worker to save in database thread - launch")
-                    personRepository.saveBatch(personBatch)
-                    personBatch.clear()
-                } else {
-                    LOGGER.info("Receiving person ${person.apelido} to batch save in database - launch")
-                    if (personBatch.size < batchSize) {
-                        personBatch.add(person)
-                    } else {
-                        personRepository.saveBatch(personBatch)
-                        personBatch.clear()
-                    }
+                if (person != null) {
+                    personRepository.save(person)
                 }
             }
         }
