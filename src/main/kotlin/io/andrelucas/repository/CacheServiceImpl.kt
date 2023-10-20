@@ -56,7 +56,7 @@ object CacheServiceImpl: CacheService {
 
     override suspend fun findByTerm(term: String): List<Person> {
         return DataBaseFactory.jdbcConnection {
-            val ps = it.prepareStatement("SELECT id, key, value from cache where key = ?")
+            val ps = it.prepareStatement("SELECT id, key, value from cache where key ilike ?")
             ps.setString(1, "%$term%")
             val rs = ps.executeQuery()
 
