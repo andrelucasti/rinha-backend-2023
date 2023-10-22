@@ -37,5 +37,5 @@ fun Application.module() {
     configureSerialization()
     configureRouting(personService)
 
-    handle(personChannelCache, personChannelBufferInsert, personChannelBatchInsert, personRepository, cacheService)
+   // handle(personChannelCache, personChannelBufferInsert, personChannelBatchInsert, personRepository, cacheService)
 }

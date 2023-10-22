@@ -34,13 +34,16 @@ class PersonService private constructor(
             return instance!!
         }
     }
-    suspend fun create(personRequest: PersonRequest): UUID = coroutineScope {
+    suspend fun create(personRequest: PersonRequest): UUID = withContext(BufferPerson.threadPool) {
         val person = personRequest.toPerson()
         val thereIsAPerson = cacheService.exists(person.apelido).or(personQuery.exists(person.apelido))
         if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
 
         LOGGER.info("Sending person to worker thread - launch - ${person.id}")
-        senderPerson(personChannel, person)
+        //senderPerson(personChannel, person)
+
+        cacheService.put(person)
+        personRepository.save(person)
 
         person.id
     }
