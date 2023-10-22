@@ -34,7 +34,7 @@ class PersonService private constructor(
             return instance!!
         }
     }
-    suspend fun create(personRequest: PersonRequest): UUID = withContext(BufferPerson.threadPool){
+    suspend fun create(personRequest: PersonRequest): UUID = coroutineScope {
         val person = personRequest.toPerson()
         val thereIsAPerson = cacheService.exists(person.apelido).or(personQuery.exists(person.apelido))
         if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
@@ -93,41 +93,37 @@ fun CoroutineScope.workerSaveInCache(receiveChannel: ReceiveChannel<Person>, sen
         }
     }
 }
-
-fun CoroutineScope.workerSaveInBufferBackground(receiveChannel: ReceiveChannel<Person>, sendChannel: SendChannel<List<Person>>, batchSize: Int
+fun CoroutineScope.workerSaveBackground(
+    receiveChannel: ReceiveChannel<Person>,
+    personRepository: PersonRepository,
+    cacheService: CacheService,
+    batchSize: Int
 ) = launch(BufferPerson.threadPool){
+    LOGGER.info("loading person from cache to save in database - launch")
+    val personBatch = mutableListOf<Person>()
     while (true) {
-        select {
-            receiveChannel.onReceive {
-                LOGGER.info("Receiving person ${it.apelido} from cache to save in database thread - launch")
-                massiveBatch(batchSize, sendChannel) {
-                    BufferPerson.buffer.add(it)
+        LOGGER.info("listening person to save in database - launch")
+        LOGGER.info("personBatch size ${personBatch.size}")
+
+        select<Unit> {
+            receiveChannel.onReceiveCatching {
+                val person = it.getOrNull()
+                if (person == null) {
+                    LOGGER.info("Receiving null person from worker to save in database thread - launch")
+                    personRepository.saveBatch(personBatch)
+                    //cacheService.deleteBatch(personBatch)
+                    personBatch.clear()
+                } else {
+                    LOGGER.info("Receiving person ${person.apelido} to batch save in database - launch")
+                    if (personBatch.size < batchSize) {
+                        personBatch.add(person)
+                    } else {
+                        personRepository.saveBatch(personBatch)
+                        //cacheService.deleteBatch(personBatch)
+                        personBatch.clear()
+                    }
+
                 }
-            }
-        }
-    }
-}
-
-suspend fun massiveBatch(batchSize: Int, sendChannel: SendChannel<List<Person>>, action: suspend () -> Unit){
-    action()
-    LOGGER.info("bufferPerson size ${BufferPerson.buffer.size}")
-
-    if (BufferPerson.buffer.size >= batchSize) {
-        LOGGER.info("bufferPerson size ${BufferPerson.buffer.size} - batch size $batchSize")
-        LOGGER.info("bufferPerson size ${BufferPerson.buffer.size} - batch size $batchSize")
-
-        sendChannel.send(BufferPerson.buffer.toList())
-        BufferPerson.buffer.clear()
-    }
-}
-
-
-suspend fun CoroutineScope.workerSaveInDatabase(receiveChannel: ReceiveChannel<List<Person>>, personRepository: PersonRepository) = launch(BufferPerson.threadPool) {
-    while (true) {
-        select {
-            receiveChannel.onReceive {
-                LOGGER.info("Receiving person ${it.size} from buffer to save in database thread - launch")
-                personRepository.saveBatch(it)
             }
         }
     }

@@ -21,13 +21,10 @@ fun Application.handle(cacheChannel: Channel<Person>,
         launch(BufferPerson.threadPool) {
             workerSaveInCache(cacheChannel, bufferInsertChannel, cacheService)
         }
-        launch(BufferPerson.threadPool) {
-            workerSaveInBufferBackground(bufferInsertChannel, batchInsertChannel, batchSize)
-        }
     }
 
 
     launch(BufferPerson.threadPool) {
-        workerSaveInDatabase(batchInsertChannel, personRepository)
+        workerSaveBackground(bufferInsertChannel, personRepository, cacheService, batchSize)
     }
 }
