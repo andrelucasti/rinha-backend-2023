@@ -114,11 +114,10 @@ suspend fun massiveBatch(batchSize: Int, sendChannel: SendChannel<List<Person>>,
 
     if (BufferPerson.buffer.size >= batchSize) {
         LOGGER.info("bufferPerson size ${BufferPerson.buffer.size} - batch size $batchSize")
-        val batch = BufferPerson.buffer.take(batchSize)
-        BufferPerson.buffer.removeAll(batch)
         LOGGER.info("bufferPerson size ${BufferPerson.buffer.size} - batch size $batchSize")
 
-        sendChannel.send(batch)
+        sendChannel.send(BufferPerson.buffer.toList())
+        BufferPerson.buffer.clear()
     }
 }
 
