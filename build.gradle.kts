@@ -5,6 +5,7 @@ val logback_version: String by project
 val exposed_version: String by project
 val postgresql_version: String by project
 val hikaricp_version: String by project
+val jobrunr_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.10"

@@ -28,7 +28,7 @@ object PersonRepositoryImpl: PersonRepository {
        }
 
 
-    override suspend fun saveBatch(personList: List<Person>): Unit =
+    override fun saveBatch(personList: List<Person>): Unit =
         jdbcConnection {
             it.prepareStatement(
                 "INSERT INTO person (id, apelido, nome, nascimento, stack, search) VALUES (?, ?, ?, ?, ?, ?)"

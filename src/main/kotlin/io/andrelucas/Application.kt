@@ -22,7 +22,8 @@ fun migrations() {
 }
 
 val personChannelCache = Channel<Person>()
-val personChannelBatchInsert = Channel<Person>()
+val personChannelBufferInsert = Channel<Person>()
+val personChannelBatchInsert = Channel<List<Person>>()
 
 val personRepository = PersonRepositoryImpl
 val cacheService = CacheServiceImpl
@@ -33,9 +34,8 @@ fun Application.module() {
     DebugProbes.install()
 
     migrations()
-
     configureSerialization()
     configureRouting(personService)
 
-    handle(personChannelCache, personChannelBatchInsert, personRepository, cacheService)
+    handle(personChannelCache, personChannelBufferInsert, personChannelBatchInsert, personRepository, cacheService)
 }

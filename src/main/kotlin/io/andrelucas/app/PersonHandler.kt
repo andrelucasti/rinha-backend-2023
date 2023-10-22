@@ -9,7 +9,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 fun Application.handle(cacheChannel: Channel<Person>,
-                       batchInsertChannel: Channel<Person>,
+                       bufferInsertChannel: Channel<Person>,
+                       batchInsertChannel: Channel<List<Person>>,
                        personRepository: PersonRepository,
                        cacheService: CacheService){
 
@@ -18,11 +19,15 @@ fun Application.handle(cacheChannel: Channel<Person>,
 
     repeat(nWorkers){
         launch(BufferPerson.threadPool) {
-            workerSaveInCache(cacheChannel, batchInsertChannel, personRepository, cacheService)
+            workerSaveInCache(cacheChannel, bufferInsertChannel, cacheService)
+        }
+        launch(BufferPerson.threadPool) {
+            workerSaveInBufferBackground(bufferInsertChannel, batchInsertChannel, batchSize)
         }
     }
 
+
     launch(BufferPerson.threadPool) {
-        workerSaveBackground(batchInsertChannel, personRepository, cacheService, batchSize)
+        workerSaveInDatabase(batchInsertChannel, personRepository)
     }
 }

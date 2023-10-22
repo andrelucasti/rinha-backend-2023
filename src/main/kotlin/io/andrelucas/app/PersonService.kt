@@ -6,14 +6,13 @@ import io.andrelucas.business.PersonQuery
 import io.andrelucas.business.PersonRepository
 import io.andrelucas.repository.BufferPerson
 import io.andrelucas.repository.CacheService
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withContext
+import java.time.Duration
 import java.util.*
 
 class PersonService private constructor(
@@ -82,10 +81,10 @@ fun CoroutineScope.senderPerson(personChannel: SendChannel<Person>, person: Pers
 
 
 
-fun CoroutineScope.workerSaveInCache(receiveChannel: ReceiveChannel<Person>, sendChannel: SendChannel<Person>, personRepository: PersonRepository, cacheService: CacheService) = launch(BufferPerson.threadPool) {
+fun CoroutineScope.workerSaveInCache(receiveChannel: ReceiveChannel<Person>, sendChannel: SendChannel<Person>, cacheService: CacheService) = launch(BufferPerson.threadPool) {
     while(true){
         LOGGER.info("listening person from worker thread - launch")
-        select<Unit> {
+        select {
             receiveChannel.onReceive {
                 LOGGER.info("Receiving person ${it.apelido} from worker to save in cache thread - launch")
                 cacheService.put(it)
@@ -95,28 +94,42 @@ fun CoroutineScope.workerSaveInCache(receiveChannel: ReceiveChannel<Person>, sen
     }
 }
 
-fun CoroutineScope.workerSaveBackground(
-    receiveChannel: ReceiveChannel<Person>,
-    personRepository: PersonRepository,
-    cacheService: CacheService,
-    batchSize: Int
+fun CoroutineScope.workerSaveInBufferBackground(receiveChannel: ReceiveChannel<Person>, sendChannel: SendChannel<List<Person>>, batchSize: Int
 ) = launch(BufferPerson.threadPool){
-    LOGGER.info("loading person from cache to save in database - launch")
-    val personBatch = mutableListOf<Person>()
     while (true) {
-        LOGGER.info("listening person to save in database - launch")
-        LOGGER.info("personBatch size ${personBatch.size}")
-
-        select<Unit> {
-            receiveChannel.onReceiveCatching {
-                val person = it.getOrNull()
-                if (person != null) {
-                    personRepository.save(person)
+        select {
+            receiveChannel.onReceive {
+                LOGGER.info("Receiving person ${it.apelido} from cache to save in database thread - launch")
+                massiveBatch(batchSize, sendChannel) {
+                    BufferPerson.buffer.add(it)
                 }
             }
         }
     }
 }
 
+suspend fun massiveBatch(batchSize: Int, sendChannel: SendChannel<List<Person>>, action: suspend () -> Unit){
+    action()
+    LOGGER.info("bufferPerson size ${BufferPerson.buffer.size}")
+
+    if (BufferPerson.buffer.size >= batchSize) {
+        LOGGER.info("bufferPerson size ${BufferPerson.buffer.size} - batch size $batchSize")
+        val batch = BufferPerson.buffer.take(batchSize)
+        BufferPerson.buffer.removeAll(batch)
+        LOGGER.info("bufferPerson size ${BufferPerson.buffer.size} - batch size $batchSize")
+
+        sendChannel.send(batch)
+    }
+}
 
 
+suspend fun CoroutineScope.workerSaveInDatabase(receiveChannel: ReceiveChannel<List<Person>>, personRepository: PersonRepository) = launch(BufferPerson.threadPool) {
+    while (true) {
+        select {
+            receiveChannel.onReceive {
+                LOGGER.info("Receiving person ${it.size} from buffer to save in database thread - launch")
+                personRepository.saveBatch(it)
+            }
+        }
+    }
+}
