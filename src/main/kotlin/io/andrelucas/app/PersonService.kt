@@ -34,7 +34,8 @@ class PersonService private constructor(
             return instance!!
         }
     }
-    suspend fun create(personRequest: PersonRequest): UUID = coroutineScope{val person = personRequest.toPerson()
+    suspend fun create(personRequest: PersonRequest): UUID = withContext(BufferPerson.threadPool){
+        val person = personRequest.toPerson()
         val thereIsAPerson = cacheService.exists(person.apelido).or(personQuery.exists(person.apelido))
         if (thereIsAPerson) throw IllegalArgumentException("Person already inserted with this apelido ${person.apelido}")
 
@@ -42,7 +43,6 @@ class PersonService private constructor(
         senderPerson(personChannel, person)
 
         person.id
-
     }
 
     suspend fun findById(personId: String): PersonResponse {
